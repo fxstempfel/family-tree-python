@@ -66,6 +66,7 @@ w_center = WIDTH * .5
 h_center = HEIGHT * .5 * .99
 CENTER = (w_center, h_center)
 RADIUS_CIRCLE = 2 / 84.1 * HEIGHT
+ARC_WIDTH = .6
 
 fig, ax = plt.subplots(1, 1, figsize=(WIDTH, HEIGHT))
 ax.set_aspect('equal', adjustable='box')
@@ -80,7 +81,7 @@ ax.set_ylim(0, HEIGHT)
 def draw_arc(radius, color=None):
     print(f"    Arc {radius}")
     e = 2 * radius
-    pac = mpt.Arc(CENTER, e, e, angle=90, theta1=-ANGLE, theta2=ANGLE, color=color)
+    pac = mpt.Arc(CENTER, e, e, angle=90, theta1=-ANGLE, theta2=ANGLE, color=color, linewidth=ARC_WIDTH)
     ax.add_patch(pac)
 
 
@@ -100,22 +101,27 @@ def draw_line_radial(x, y, d, theta, offset=0.0, line_width=None):
 
 
 def draw_generation_rec(n, offset, already_plotted_angles=None):
-    if n > CONFIG["nb_gen"]:
+    if n == CONFIG["nb_gen"]:
         return offset
-    radius_diff_people = DIMENSIONS_PEOPLE[n - 1] * RADIUS_CIRCLE
-    radius_marriage = DIMENSIONS_MARRIAGE[n - 1] * RADIUS_CIRCLE
-    line_width = DIMENSIONS_WIDTH[n - 1]
+    radius_diff_people = DIMENSIONS_PEOPLE[n] * RADIUS_CIRCLE
+    radius_marriage = DIMENSIONS_MARRIAGE[n] * RADIUS_CIRCLE
+    line_width = DIMENSIONS_WIDTH[n]
 
-    # draw arcs
     radius_first = offset + radius_marriage
     radius_second = radius_first + radius_diff_people
-    print(f"#{n}: {offset} {radius_diff_people} {radius_first} {radius_second}")
-    draw_arc(radius_first)
-    draw_arc(radius_second)
 
     # fill area for marriages
-    x_list, y_1_list, y_2_list = interpolate_arcs(offset, radius_first, 1000)
-    fill_between_curves(x_list, y_1_list, y_2_list, "y")
+    x_list, y_list = interpolate_arcs(offset, radius_first)
+    """if n == 0:
+        FIG = plt.figure()
+        AXES = FIG.add_subplot(111)
+        arrowplot(AXES, np.array(x_list), np.array(y_list))
+    """
+    ax.fill(x_list, y_list, "#fff799", zorder=-12)
+
+    # draw arcs
+    draw_arc(radius_first)
+    draw_arc(radius_second)
 
     # draw lines (2^n lines to draw)
     if already_plotted_angles is None:
@@ -139,7 +145,6 @@ def draw_generation_rec(n, offset, already_plotted_angles=None):
             if theta2 > theta + angles_error:
                 break
         if skip:
-            #print(f"        Skipping {theta:.3f} ({theta2:.3f})")
             continue
 
         # draw line if not skipped
@@ -158,36 +163,25 @@ def _find_separating_angles(k):
     return [size_chunk * (i + 1) - ANGLE for i in range(k)]
 
 
-def interpolate_arcs(radius_1, radius_2, nb_points):
-    def circle_fct(x, r):
-        # todo this is not correct (check signs)
-        if r**2 - (x - w_center)**2 < 0:
-            pass
-            #print(f"    COMPUTING SQRT {x} {r}   {r**2}  {(x - w_center)**2}")
-        return np.sqrt(r**2 - (x - w_center)**2) + h_center
+def interpolate_arcs(radius_1, radius_2):
+    # first, interpolate inner arc left to right
+    num = 1000 + int((radius_1 / WIDTH) ** 3 * 5000000)
+    num = 100
+    print(f"{num=}")
+    thetas = np.linspace((180 + ANGLE - ANGLE_OFFSET) / 180 * np.pi, (180 - ANGLE - ANGLE_OFFSET) / 180 * np.pi, num=num)
+    print(f"{thetas=}")
+    r1 = radius_1
+    x = [r1 * np.cos(t) + w_center for t in thetas]
+    y = [r1 * np.sin(t) + h_center for t in thetas]
 
-    left_bound = radius_2 * np.cos(- np.pi)
-    right_bound = radius_2 * np.cos(np.pi)
-    print(left_bound, right_bound)
-    xs = np.linspace(left_bound, right_bound, nb_points)
+    # second, interpolate outer arc right to left
+    x += [radius_2 * np.cos(t) + w_center for t in reversed(thetas)]
+    y += [radius_2 * np.sin(t) + h_center for t in reversed(thetas)]
 
-    y_1 = []
-    y_2 = []
-    for x in xs:
-        y_1.append(circle_fct(x, radius_1))
-        y_2.append(circle_fct(x, radius_2))
+    x.append(x[0])
+    y.append(y[0])
 
-    return xs, y_1, y_2
-
-
-def fill_between_curves(x, y1, y2, color):
-    poly_x = np.concatenate((x, x[::-1]))
-    poly_y = np.concatenate((y1, y2))
-    print(poly_x)
-    print(poly_y)
-    p = plt.Polygon(np.column_stack((poly_x, poly_y)), facecolor=color, alpha=.5, edgecolor=None)
-    print(p)
-    ax.add_artist(p)
+    return x, y
 
 
 # draw circle
@@ -200,7 +194,7 @@ draw_line_radial(*CENTER, RADIUS_MAX, ANGLE, offset=RADIUS_CIRCLE, line_width=1)
 draw_line_radial(*CENTER, RADIUS_MAX, -ANGLE, offset=RADIUS_CIRCLE, line_width=1)
 
 # draw generations
-draw_generation_rec(1, RADIUS_CIRCLE)
+draw_generation_rec(0, RADIUS_CIRCLE)
 
 print(f"{len(ax.patches)} patches")
 
