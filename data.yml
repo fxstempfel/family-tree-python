@@ -1,0 +1,63 @@
+family:
+  - id: 0
+    name: Evelyne Branchet
+    birth:
+      date: 20/10/1956
+      place: Tarare
+    parents:
+      - 1
+      - 2
+  - id: 1
+    name: Rosa Dumont
+    birth:
+      date: 23/08/1923
+      place: Saint-Genis l'Argentière
+    death:
+      date: 24/01/2018
+      place: Saint-Laurent de Chamoussey
+    parents:
+      - 3
+      - 4
+  - id: 2
+    name: Mari de Rosa
+    birth:
+      date: 23/08/1923
+      place: Saint-Genis l'Argentière
+    death:
+      date: 24/01/2018
+      place: Saint-Laurent de Chamoussey
+    parents:
+      - 5
+  - id: 3
+    name: Mathieu-François Dumont
+    birth:
+      date: 23/12/1890
+      place: Souzy
+    death:
+      date: 03/11/1964
+      place: Saint-Genis l'Argentière
+  - id: 4
+    name: Maria Fournion
+    birth:
+      date: 09/08/1888
+      place: Saint-Laurent de Chamoussey
+    death:
+      date: 30/12/1972
+      place: Saint-Laurent de Chamoussey
+  - id: 5
+    name: Père de mari de Rosa
+    birth:
+      date: 01/01/1800
+      place: Somewhere
+    death:
+      date: 01/12/1900
+      place: Elsewhere
+couples:
+  - first: 1
+    second: 2
+    date: 01/01/1950
+    place: Truc
+  - first: 3
+    second: 4
+    date: 12/12/1945
+    place: Muche

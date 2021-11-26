@@ -1,0 +1,13 @@
+nb_generations: 6
+dimensions:
+  radius_marriage: 0.5
+  radiuses:
+    - from_generation: 0
+      size: 1.5
+    - from_generation: 4
+      size: 2.5
+    - from_generation: 6
+      size: 5
+  width: 70
+  height: 50
+  angle: 150
