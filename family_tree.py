@@ -5,11 +5,15 @@ import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpt
 import matplotlib.pyplot as plt
+from wand.compat import nested
+from wand.display import display
+from wand.drawing import Drawing
+from wand.image import Image
 
 
 @dataclass()
 class Dimension:
-    value: float
+    radius_factor: float
     occurrences: int
 
 
@@ -44,7 +48,7 @@ CONFIG = {
 
 
 def _make_dimensions(key: str):
-    return list(itertools.chain(*[[d.value] * d.occurrences for d in CONFIG["dimensions"][key]]))[:CONFIG["nb_gen"]]
+    return list(itertools.chain(*[[d.radius_factor] * d.occurrences for d in CONFIG["dimensions"][key]]))[:CONFIG["nb_gen"]]
 
 
 DIMENSIONS_PEOPLE = _make_dimensions("people")
@@ -103,20 +107,17 @@ def draw_line_radial(x, y, d, theta, offset=0.0, line_width=None):
 def draw_generation_rec(n, offset, already_plotted_angles=None):
     if n == CONFIG["nb_gen"]:
         return offset
+    print(f"GENERATION {n}")
     radius_diff_people = DIMENSIONS_PEOPLE[n] * RADIUS_CIRCLE
-    radius_marriage = DIMENSIONS_MARRIAGE[n] * RADIUS_CIRCLE
+    radius_diff_marriage = DIMENSIONS_MARRIAGE[n] * RADIUS_CIRCLE
     line_width = DIMENSIONS_WIDTH[n]
 
-    radius_first = offset + radius_marriage
+    radius_first = offset + radius_diff_marriage
     radius_second = radius_first + radius_diff_people
+    print(f"DRAWING {offset=} {radius_first=} {radius_second=}")
 
     # fill area for marriages
     x_list, y_list = interpolate_arcs(offset, radius_first)
-    """if n == 0:
-        FIG = plt.figure()
-        AXES = FIG.add_subplot(111)
-        arrowplot(AXES, np.array(x_list), np.array(y_list))
-    """
     ax.fill(x_list, y_list, "#fff799", zorder=-12)
 
     # draw arcs
@@ -126,9 +127,9 @@ def draw_generation_rec(n, offset, already_plotted_angles=None):
     # draw lines (2^n lines to draw)
     if already_plotted_angles is None:
         already_plotted_angles = []
-    # we need to split [-angle, angle] into 2^n + 1 intervals
 
-    range_separating_angles = _find_separating_angles(2 ** n - 1)
+    # we need to split [-angle, angle] into 2^(n+1) + 1 intervals
+    range_separating_angles = _find_separating_angles(2 ** (n + 1) - 1)
     plotted_angles_list = []
     # due to numerical operation, angles can be slightly different
     if len(range_separating_angles) >= 2:
@@ -165,11 +166,11 @@ def _find_separating_angles(k):
 
 def interpolate_arcs(radius_1, radius_2):
     # first, interpolate inner arc left to right
-    num = 1000 + int((radius_1 / WIDTH) ** 3 * 5000000)
-    num = 100
-    print(f"{num=}")
-    thetas = np.linspace((180 + ANGLE - ANGLE_OFFSET) / 180 * np.pi, (180 - ANGLE - ANGLE_OFFSET) / 180 * np.pi, num=num)
-    print(f"{thetas=}")
+    #num = 1000 + int((radius_1 / WIDTH) ** 3 * 5000000)
+    num = 1000
+    thetas = np.linspace((180 + ANGLE - ANGLE_OFFSET) / 180 * np.pi,
+                         (180 - ANGLE - ANGLE_OFFSET) / 180 * np.pi,
+                         num=num)
     r1 = radius_1
     x = [r1 * np.cos(t) + w_center for t in thetas]
     y = [r1 * np.sin(t) + h_center for t in thetas]
@@ -201,3 +202,15 @@ print(f"{len(ax.patches)} patches")
 plt.axis('off')
 #plt.show()
 plt.savefig("test.pdf", bbox_inches='tight')
+
+# TODO python wand : possible to use https://stackoverflow.com/a/68986570/9257294 with transparent background and insertion into pdf?
+
+"""with nested(Image(filename="test.pdf"), Drawing()) as (img, draw):
+    center = int(img.width / 2), int(img.height / 2)
+    radius_circle = 2 / HEIGHT * img.height
+
+    draw.font_size = 16
+    draw.text_alignment = "center"
+    draw.text(center[0], center[1], "Evelyne BRANCHET\n19/07/1956\nà Saint-Laurent\nde Chamoussey")
+    draw(img)
+    display(img)"""
