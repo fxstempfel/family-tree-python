@@ -5,10 +5,6 @@ import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpt
 import matplotlib.pyplot as plt
-from wand.compat import nested
-from wand.display import display
-from wand.drawing import Drawing
-from wand.image import Image
 
 
 @dataclass()
@@ -66,8 +62,9 @@ HEIGHT = 84.1
 ANGLE = 170
 ANGLE_OFFSET = 90
 
+H_CENTER_FACTOR = .99
 w_center = WIDTH * .5
-h_center = HEIGHT * .5 * .99
+h_center = HEIGHT * .5 * H_CENTER_FACTOR
 CENTER = (w_center, h_center)
 RADIUS_CIRCLE = 2 / 84.1 * HEIGHT
 ARC_WIDTH = .6
@@ -90,7 +87,7 @@ def draw_arc(radius, color=None):
 
 
 def draw_line_radial(x, y, d, theta, offset=0.0, line_width=None):
-    theta = theta + ANGLE_OFFSET
+    theta += ANGLE_OFFSET
     theta_rad = theta / 180 * np.pi
     cos = np.cos(theta_rad)
     sin = np.sin(theta_rad)
@@ -130,6 +127,7 @@ def draw_generation_rec(n, offset, already_plotted_angles=None):
 
     # we need to split [-angle, angle] into 2^(n+1) + 1 intervals
     range_separating_angles = _find_separating_angles(2 ** (n + 1) - 1)
+    print(f"{range_separating_angles=}")
     plotted_angles_list = []
     # due to numerical operation, angles can be slightly different
     if len(range_separating_angles) >= 2:
@@ -185,32 +183,21 @@ def interpolate_arcs(radius_1, radius_2):
     return x, y
 
 
-# draw circle
-ax.add_patch(mpt.Circle(CENTER, RADIUS_CIRCLE, fill=False))
+if __name__ == '__main__':
+    # draw circle
+    ax.add_patch(mpt.Circle(CENTER, RADIUS_CIRCLE, fill=False))
 
-# draw side lines
-RADIUS_MAX = (1 + sum(DIMENSIONS_PEOPLE) + sum(DIMENSIONS_MARRIAGE)) * RADIUS_CIRCLE
-print(f"{RADIUS_MAX=}")
-draw_line_radial(*CENTER, RADIUS_MAX, ANGLE, offset=RADIUS_CIRCLE, line_width=1)
-draw_line_radial(*CENTER, RADIUS_MAX, -ANGLE, offset=RADIUS_CIRCLE, line_width=1)
+    # draw side lines
+    RADIUS_MAX = (1 + sum(DIMENSIONS_PEOPLE) + sum(DIMENSIONS_MARRIAGE)) * RADIUS_CIRCLE
+    print(f"{RADIUS_MAX=}")
+    draw_line_radial(*CENTER, RADIUS_MAX, ANGLE, offset=RADIUS_CIRCLE, line_width=1)
+    draw_line_radial(*CENTER, RADIUS_MAX, -ANGLE, offset=RADIUS_CIRCLE, line_width=1)
 
-# draw generations
-draw_generation_rec(0, RADIUS_CIRCLE)
+    # draw generations
+    draw_generation_rec(0, RADIUS_CIRCLE)
 
-print(f"{len(ax.patches)} patches")
+    print(f"{len(ax.patches)} patches")
 
-plt.axis('off')
-#plt.show()
-plt.savefig("test.pdf", bbox_inches='tight')
-
-# TODO python wand : possible to use https://stackoverflow.com/a/68986570/9257294 with transparent background and insertion into pdf?
-
-"""with nested(Image(filename="test.pdf"), Drawing()) as (img, draw):
-    center = int(img.width / 2), int(img.height / 2)
-    radius_circle = 2 / HEIGHT * img.height
-
-    draw.font_size = 16
-    draw.text_alignment = "center"
-    draw.text(center[0], center[1], "Evelyne BRANCHET\n19/07/1956\nà Saint-Laurent\nde Chamoussey")
-    draw(img)
-    display(img)"""
+    plt.axis('off')
+    #plt.show()
+    plt.savefig("test.pdf", bbox_inches='tight')
